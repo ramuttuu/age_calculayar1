@@ -1,0 +1,111 @@
+<!doctype html>
+<html lang="hi">
+<head>
+  <meta charset="utf-8" />
+  <meta name="viewport" content="width=device-width, initial-scale=1" />
+  <title>Age Calculator — capy</title>
+  <style>
+    :root{--bg:#f7fafc;--card:#fff;--accent:#0ea5a4;--muted:#6b7280}
+    *{box-sizing:border-box;font-family:Inter, system-ui, -apple-system, 'Segoe UI', Roboto, 'Helvetica Neue', Arial}
+    body{margin:0;background:var(--bg);color:#111;display:flex;align-items:center;justify-content:center;min-height:100vh;padding:24px}
+    .card{width:100%;max-width:680px;background:var(--card);border-radius:12px;box-shadow:0 6px 24px rgba(14,165,164,0.08);padding:26px}
+    h1{margin:0 0 6px;font-size:20px}
+    p.lead{margin:0 0 18px;color:var(--muted)}
+    .row{display:flex;gap:12px;flex-wrap:wrap}
+    label{display:block;font-size:13px;color:var(--muted);margin-bottom:6px}
+    input[type=date]{padding:10px;border-radius:8px;border:1px solid #e6eef0;width:220px}
+    button{background:var(--accent);color:#fff;border:none;padding:10px 14px;border-radius:10px;cursor:pointer}
+    .result{margin-top:18px;padding:14px;border-radius:10px;background:#fbfffe;border:1px solid #e6f7f6}
+    .big{font-size:20px;font-weight:600}
+    .small{color:var(--muted);font-size:13px}
+    footer{margin-top:18px;text-align:right;color:var(--muted);font-size:13px}
+    .extras{margin-top:12px;display:flex;gap:8px;flex-wrap:wrap}
+    .chip{background:#f1f6f6;padding:8px 10px;border-radius:999px;font-size:13px;color:#0b6b68}
+    @media (max-width:520px){.row{flex-direction:column}input[type=date]{width:100%}}
+  </style>
+</head>
+<body>
+  <div class="card">
+    <h1>Age Calculator</h1>
+    <p class="lead">अपनी जन्मतिथि चुनें और उम्र (Years, Months, Days) और कुछ और जानकारी पाएं।</p>
+
+    <div class="row">
+      <div>
+        <label for="dob">जन्मतिथि (Date of Birth)</label>
+        <input id="dob" type="date">
+      </div>
+      <div style="display:flex;flex-direction:column;justify-content:flex-end">
+        <button id="calc">Calculate</button>
+      </div>
+    </div>
+
+    <div class="extras">
+      <div class="chip"><input id="showDays" type="checkbox" checked> <label for="showDays" style="display:inline;margin-left:6px">Total days lived</label></div>
+      <div class="chip"><input id="nextBd" type="checkbox" checked> <label for="nextBd" style="display:inline;margin-left:6px">Next birthday countdown</label></div>
+      <div class="chip"><input id="showDOBformat" type="checkbox"> <label for="showDOBformat" style="display:inline;margin-left:6px">Show formatted DOB</label></div>
+    </div>
+
+    <div id="result" class="result" style="display:none">
+      <div class="big" id="ageText"></div>
+      <div class="small" id="moreText" style="margin-top:8px"></div>
+    </div>
+
+    <footer>Made by <strong>Nimmalwar Tulsiram</strong></footer>
+  </div>
+
+  <script>
+    function calcAge(dob){
+      const now = new Date();
+      if (dob > now) return null;
+
+      let years = now.getFullYear() - dob.getFullYear();
+      let months = now.getMonth() - dob.getMonth();
+      let days = now.getDate() - dob.getDate();
+
+      if (days < 0){
+        const prev = new Date(now.getFullYear(), now.getMonth(), 0);
+        days += prev.getDate();
+        months -= 1;
+      }
+      if (months < 0){
+        months += 12;
+        years -= 1;
+      }
+
+      const totalDays = Math.floor((now - dob) / (1000*60*60*24));
+
+      let nextBd = new Date(now.getFullYear(), dob.getMonth(), dob.getDate());
+      if (nextBd <= now){ nextBd = new Date(now.getFullYear()+1, dob.getMonth(), dob.getDate()); }
+      const diffNext = nextBd - now;
+      const ndDays = Math.floor(diffNext / (1000*60*60*24));
+      const ndHours = Math.floor((diffNext % (1000*60*60*24)) / (1000*60*60));
+      const ndMinutes = Math.floor((diffNext % (1000*60*60)) / (1000*60));
+
+      return {years, months, days, totalDays, nextBirthday:{days:ndDays, hours:ndHours, minutes:ndMinutes}, dobFormatted: dob.toDateString() };
+    }
+
+    document.getElementById('calc').addEventListener('click', ()=>{
+      const dobInput = document.getElementById('dob').value;
+      const out = document.getElementById('result');
+      const ageText = document.getElementById('ageText');
+      const moreText = document.getElementById('moreText');
+      if (!dobInput){ alert('कृपया जन्मतिथि चुनें'); return; }
+      const dob = new Date(dobInput+'T00:00:00');
+      const res = calcAge(dob);
+      if (!res){ alert('भविष्य की तारीख चुनें'); return; }
+
+      ageText.textContent = res.years + ' साल, ' + res.months + ' महीने, ' + res.days + ' दिन';
+
+      const parts = [];
+      if (document.getElementById('showDays').checked) parts.push('Total days lived: ' + res.totalDays + ' दिन');
+      if (document.getElementById('nextBd').checked) parts.push('Next birthday in: ' + res.nextBirthday.days + ' दिनों, ' + res.nextBirthday.hours + ' घंटों, ' + res.nextBirthday.minutes + ' मिनट');
+      if (document.getElementById('showDOBformat').checked) parts.push('DOB formatted: ' + res.dobFormatted);
+
+      moreText.innerHTML = parts.join(' · ');
+      out.style.display = 'block';
+    });
+
+    document.getElementById('dob').addEventListener('keydown', (e)=>{ if (e.key==='Enter') document.getElementById('calc').click(); });
+  </script>
+</body>
+</html>
